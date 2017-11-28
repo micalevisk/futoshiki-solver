@@ -9,26 +9,27 @@ Tabuleiro jogo;
 
 
 bool validarEDefinir(unsigned short valor, unsigned short i, unsigned short j) {
-  jogo.setValorQuadrado(valor, i,j);
+  jogo.setValorQuadrado(valor, i, j); // força a cor
 
   if ( jogo.regrasValidasPara(valor, i, j) ) return true;
-  jogo.setValorQuadrado(AUSENCIA_DE_VALOR, i,j); // reset
-  return false;
+
+  // apaga o valor do quadrado e retorna 'false'
+  return !jogo.setValorQuadrado(AUSENCIA_DE_VALOR, i, j);
 }
 
 
 bool solucionar(unsigned short i, unsigned short j) {
   if (i == jogo.tamanho) return true; // já chegou no quadrado do canto inferior direito
   if (j == jogo.tamanho) return solucionar(i+1, 0); // próxima linha
-  if(jogo.matriz[i][j].valor != AUSENCIA_DE_VALOR) return solucionar(i, j+1); // próxima célula
+  if(jogo.matriz[i][j].valor != AUSENCIA_DE_VALOR) return solucionar(i, j+1); // próximo quadrado
 
   for (unsigned short cor=1; cor <= jogo.tamanho; ++cor) {
-    if (validarEDefinir(cor, i,j)
-    && solucionar(i, j+1)) return true;
+    if ( validarEDefinir(cor, i,j)
+    &&   solucionar(i, j+1) ) return true;
   }
 
   // apaga o valor do quadrado e retorna 'false'
-  return !jogo.setValorQuadrado(AUSENCIA_DE_VALOR, i,j);
+  return !jogo.setValorQuadrado(AUSENCIA_DE_VALOR, i, j);
 }
 
 
