@@ -5,6 +5,76 @@ var modal;
 const ordem = 4;
 const qtdSetas = (ordem-1)*ordem;
 
+const INC_CIRCULAR = (x, n) => (x+1)%n;
+const LINHA = (i) => Math.ceil((i+1)/ordem);
+const COLUNA = (i) => i - LINHA(i)*(ordem-1);
+const VALOR = (i,j) => ordem*(i+1) - (ordem-j);
+
+// ------------------- //
+function restricoesValidasPara(i, j) {
+	const v = VALOR(i,j)
+	for (let indexMaior of allSlots[v].greaterThan) {
+		let valMaior = allSlots[indexMaior].currentVal;
+		if (valMaior && valMaior <= allSlots[v].currentVal) return false;
+	}
+
+	for (let indexMenor of allSlots[v].greaterThan) {
+		let valMenor = allSlots[indexMenor].currentVal;
+		if (valMenor && valMenor >= allSlots[v].currentVal) return false;
+	}
+
+	return true;
+}
+
+function linhaValidaPara(valor, i, j) {
+	let colunaAtual = INC_CIRCULAR(j, ordem);
+
+	do {
+		if ( allSlots[VALOR(i, colunaAtual)].currentValue === valor ) return false;
+		colunaAtual = INC_CIRCULAR(colunaAtual, ordem);
+	} while (colunaAtual !== j);
+
+	return true;
+}
+
+function colunaValidaPara(valor, i, j) {
+	let linhaAtual = INC_CIRCULAR(i, ordem);
+
+	do {
+		if ( allSlots[VALOR(linhaAtual, j)].currentValue === valor ) return false;
+		linhaAtual = INC_CIRCULAR(linhaAtual, ordem);
+	} while (linhaAtual !== i);
+
+	return true;
+}
+
+function regrasValidasPara(valor, i, j) {
+	return restricoesValidasPara(i, j) && linhaValidaPara(valor, i, j) && colunaValidaPara(valor, i, j);
+}
+
+function validarEDefinir(valor, i, j) {
+	allSlots[VALOR(i,j)].currentVal = valor;
+	if ( regrasValidasPara(valor, i, j) ) return true;
+
+	allSlots[VALOR(i, j)].currentVal = 0;
+	return false;
+}
+
+function solucionar(i, j) {
+	if (i === ordem) return true;
+	if (j === ordem) return solucionar(i+1, 0);
+	console.log(i,j, allSlots[VALOR(i,j)].currentVal)//undefined aqui
+	if (allSlots[VALOR(i,j)].currentVal !== 0) return solucionar(i, j+1);
+
+	for (let cor=1; cor <= ordem; ++cor) {
+		if ( validarEDefinir(cor, i, j) && solucionar(i, j+1) ) return true;
+	}
+
+	allSlots[VALOR(i, j)].currentVal = 0;
+	return false;
+}
+// ------------------- //
+
 function run(index) {
 	while (true) {
 		if (index > (ordem*ordem)-1) {
@@ -133,6 +203,7 @@ function initAllSlots() {
 			allSlots[i].currentValue = parseInt($(cells[i]).val(), 10);
 			allSlots[i].isMutable = false;
 		} else {
+			allSlots[i].currentValue = 0;
 			allSlots[i].isMutable = true;
 		}
 	}
@@ -264,7 +335,8 @@ $('#solve').on('click', function() {
     return;
   }
 	initAllSlots();
-	var result = run(0);
+	// var result = run(0);
+	var result = solucionar(0, 0);
 	if (result == 1) {
 		for (let i = 1; i < qtdSetas+ordem+1; i++) {
 			var slot = $('input#' + i);
@@ -295,7 +367,7 @@ function displayErrorModal(errorType) {
   if (errorType == 1) {
 		errorMessage = "<p>Not possible with the current setup, adjust the rules and try again</p>";
 	} else if (errorType == 2) {
-    errorMessage = "<p>Use only numbers 1-5</p>"
+    errorMessage = "<p>Use only numbers 1-4</p>"
   }
   $(".modal-body-error").empty();
   $(".modal-body-error").append(errorMessage);
