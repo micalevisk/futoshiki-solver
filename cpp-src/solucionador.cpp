@@ -10,16 +10,10 @@ Tabuleiro jogo;
 
 bool validarEDefinir(unsigned short valor, unsigned short i, unsigned short j) {
   jogo.setValorQuadrado(valor, i,j);
-  jogo.matriz[i][j].valorTemporario = true;
 
-  if ( !jogo.regrasValidasPara(valor, i,j) ) {
-    jogo.matriz[i][j].valorTemporario = false; // reset
-    jogo.setValorQuadrado(AUSENCIA_DE_VALOR, i,j); // reset
-    return false;
-  }
-
-  jogo.matriz[i][j].valorTemporario = false; // validar
-  return true;
+  if ( jogo.regrasValidasPara(valor, i, j) ) return true;
+  jogo.setValorQuadrado(AUSENCIA_DE_VALOR, i,j); // reset
+  return false;
 }
 
 
@@ -29,7 +23,8 @@ bool solucionar(unsigned short i, unsigned short j) {
   if(jogo.matriz[i][j].valor != AUSENCIA_DE_VALOR) return solucionar(i, j+1); // próxima célula
 
   for (unsigned short cor=1; cor <= jogo.tamanho; ++cor) {
-    if ( validarEDefinir(cor, i,j) && solucionar(i, j+1) ) return true;
+    if (validarEDefinir(cor, i,j)
+    && solucionar(i, j+1)) return true;
   }
 
   // apaga o valor do quadrado e retorna 'false'

@@ -2,11 +2,11 @@
 #define TABULEIRO_HPP
 
 
-
 #include <vector>
 #include <iostream>
 #include <fstream>
 #define AUSENCIA_DE_VALOR 0
+#define INC_CIRCULAR(x, N) ((x+1)%N)
 
 using namespace std;
 
@@ -14,7 +14,6 @@ using namespace std;
 class Quadrado {
   public:
     unsigned short valor; // valor da célula
-    bool valorTemporario; // indicar que o valor só foi definido para verificar as restrições
     vector<Quadrado*> maiores, menores; // quadrados maiores e menores que este, respectivamente
 
 };
@@ -22,7 +21,9 @@ class Quadrado {
 
 class Tabuleiro {
   private:
-    bool linhaOuColunaValidaParaValor(unsigned, unsigned, unsigned, unsigned, unsigned);
+    bool linhaValidaParaValor(unsigned short, unsigned short, unsigned short);
+    bool colunaValidaParaValor(unsigned short, unsigned short, unsigned short);
+    bool restricoesValidasParaQuadrado(unsigned short, unsigned short);
 
   public:
     unsigned short tamanho;
@@ -56,39 +57,54 @@ void Tabuleiro::mostrar(bool comRestricoes = false) {
   }
 }
 
-bool Tabuleiro::regrasValidasPara(unsigned short valor, unsigned short i, unsigned short j) {
-  return coordenadaValida(i, j)
-      && linhaOuColunaValidaParaValor(valor, i, 0, 0, 1)  // checar linha
-      && linhaOuColunaValidaParaValor(valor, 0, j, 1, 0); // checar coluna
+
+// verifica se o valor já existe na linha i
+bool Tabuleiro::linhaValidaParaValor(unsigned short valor, unsigned short i, unsigned short j) {
+  unsigned colunaAtual = INC_CIRCULAR(j, tamanho);
+
+  do {
+    if (matriz[i][colunaAtual].valor == valor) return false;
+    colunaAtual = INC_CIRCULAR(colunaAtual, tamanho);
+  } while (colunaAtual != j);
+
+  return true;
 }
 
-// admite que o valor passado e as coordenadas são válidas
-bool Tabuleiro::linhaOuColunaValidaParaValor(unsigned valor, unsigned i, unsigned j, unsigned incrLinha, unsigned incrColuna) {
-  if ( !coordenadaValida(i, j) ) return true;
+// verifica se o valor já existe na coluna j
+bool Tabuleiro::colunaValidaParaValor(unsigned short valor, unsigned short i, unsigned short j) {
+  unsigned linhaAtual = INC_CIRCULAR(i, tamanho);
 
-  Quadrado quadradoAtual = matriz[i][j];
+  do {
+    if (matriz[linhaAtual][j].valor == valor) return false;
+    linhaAtual = INC_CIRCULAR(linhaAtual, tamanho);
+  } while (linhaAtual != i);
 
-  if ((quadradoAtual.valor == valor) && (!quadradoAtual.valorTemporario)) return false; // já existe célula com o valor passado
+  return true;
+}
 
-  if (quadradoAtual.valor != AUSENCIA_DE_VALOR) {
+// verificar se alguma restrição da célula (i,j) é violada
+bool Tabuleiro::restricoesValidasParaQuadrado(unsigned short i, unsigned short j) {
+  Quadrado q = matriz[i][j];
 
-    for (const auto quadradoMaior : quadradoAtual.maiores) {
-      if ( (quadradoMaior->valor != AUSENCIA_DE_VALOR)
-        && (!quadradoMaior->valorTemporario)
-        && (quadradoMaior->valor < quadradoAtual.valor)) return false;
-    }
-
-    for (const auto quadradoMenor : quadradoAtual.menores) {
-      if ( (quadradoMenor->valor != AUSENCIA_DE_VALOR)
-        && (!quadradoMenor->valorTemporario)
-        && (quadradoMenor->valor > quadradoAtual.valor)) return false;
-    }
-
+  for (const auto qMaior : q.maiores) {
+    if (qMaior->valor != AUSENCIA_DE_VALOR
+    &&  qMaior->valor <= q.valor) return false;
   }
 
-  return linhaOuColunaValidaParaValor(valor, i+incrLinha, j+incrColuna, incrLinha, incrColuna); // verificar próxima linha/coluna
+  for (const auto qMenor : q.menores) {
+    if (qMenor->valor != AUSENCIA_DE_VALOR
+    &&  qMenor->valor >= q.valor) return false;
+  }
+
+  return true;
 }
 
+// verificar se as regras do jogo serão mantidas após a inserção de 'valor' em (i,j); admite coordenada válida
+bool Tabuleiro::regrasValidasPara(unsigned short valor, unsigned short i, unsigned short j) {
+  return restricoesValidasParaQuadrado(i, j)
+      && linhaValidaParaValor(valor, i, j)
+      && colunaValidaParaValor(valor, i, j);
+}
 
 
 #endif
