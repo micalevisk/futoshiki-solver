@@ -14,13 +14,13 @@ const VALOR = (i,j) => ordem*(i+1) - (ordem-j);
 function restricoesValidasPara(i, j) {
 	const v = VALOR(i,j)
 	for (let indexMaior of allSlots[v].greaterThan) {
-		let valMaior = allSlots[indexMaior].currentVal;
-		if (valMaior && valMaior <= allSlots[v].currentVal) return false;
+		let valMaior = allSlots[indexMaior].currentValue;
+		if (valMaior && valMaior <= allSlots[v].currentValue) return false;
 	}
 
 	for (let indexMenor of allSlots[v].greaterThan) {
-		let valMenor = allSlots[indexMenor].currentVal;
-		if (valMenor && valMenor >= allSlots[v].currentVal) return false;
+		let valMenor = allSlots[indexMenor].currentValue;
+		if (valMenor && valMenor >= allSlots[v].currentValue) return false;
 	}
 
 	return true;
@@ -53,71 +53,29 @@ function regrasValidasPara(valor, i, j) {
 }
 
 function validarEDefinir(valor, i, j) {
-	allSlots[VALOR(i,j)].currentVal = valor;
+	allSlots[VALOR(i,j)].currentValue = valor;
+
 	if ( regrasValidasPara(valor, i, j) ) return true;
 
-	allSlots[VALOR(i, j)].currentVal = 0;
+	allSlots[VALOR(i, j)].currentValue = 0;
 	return false;
 }
 
 function solucionar(i, j) {
 	if (i === ordem) return true;
 	if (j === ordem) return solucionar(i+1, 0);
-	console.log(i,j, allSlots[VALOR(i,j)].currentVal)//undefined aqui
-	if (allSlots[VALOR(i,j)].currentVal !== 0) return solucionar(i, j+1);
+	if (allSlots[VALOR(i,j)].currentValue !== 0) return solucionar(i, j+1);
 
 	for (let cor=1; cor <= ordem; ++cor) {
 		if ( validarEDefinir(cor, i, j) && solucionar(i, j+1) ) return true;
 	}
 
-	allSlots[VALOR(i, j)].currentVal = 0;
+	allSlots[VALOR(i, j)].currentValue = 0;
 	return false;
 }
 // ------------------- //
 
-function run(index) {
-	while (true) {
-		if (index > (ordem*ordem)-1) {
-			return 1;
-		}
-		if (allSlots[index].isMutable === true) {
-			break;
-		} else {
-			index++;
-		}
-	}
-	var possibleValues = getPossibleValues(index);
-	if (possibleValues.length === 0) {
-		return 0;
-	}
-	outer:
-		while (possibleValues.length > 0) {
-			setToZero(index);
-			allSlots[index].currentValue = possibleValues.shift();
-			if (allSlots[index].greaterThan.length > 0) {
-				for (let i = 0; i < allSlots[index].greaterThan.length; i++) {
-					var idOfGreaterThan = allSlots[index].greaterThan[i];
-					let currentVal = allSlots[idOfGreaterThan].currentValue;
-					if (currentVal !== 0 && currentVal > allSlots[index].currentValue) {
-						continue outer;
-					}
-				}
-			}
-			if (allSlots[index].smallerThan.length > 0) {
-				for (let i = 0; i < allSlots[index].smallerThan.length; i++) {
-					var idOfSmallerThan = allSlots[index].smallerThan[i];
-					let currentVal = allSlots[idOfSmallerThan].currentValue;
-					if (currentVal !== 0 && currentVal < allSlots[index].currentValue) {
-						continue outer;
-					}
-				}
-			}
-			if (run(index + 1) == 1) {
-				return 1;
-			}
-		}
-	return 0;
-}
+
 
 function getPossibleValues(id) {
 	var possibleValues = [];
@@ -335,7 +293,6 @@ $('#solve').on('click', function() {
     return;
   }
 	initAllSlots();
-	// var result = run(0);
 	var result = solucionar(0, 0);
 	if (result == 1) {
 		for (let i = 1; i < qtdSetas+ordem+1; i++) {
@@ -367,7 +324,7 @@ function displayErrorModal(errorType) {
   if (errorType == 1) {
 		errorMessage = "<p>Not possible with the current setup, adjust the rules and try again</p>";
 	} else if (errorType == 2) {
-    errorMessage = "<p>Use only numbers 1-4</p>"
+    errorMessage = `<p>Use only numbers 1-${ordem}</p>`
   }
   $(".modal-body-error").empty();
   $(".modal-body-error").append(errorMessage);
